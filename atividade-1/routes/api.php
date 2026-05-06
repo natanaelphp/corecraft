@@ -66,14 +66,33 @@ Route::get('blocks/recent', function (BitcoinRPC $rpc, Request $request) {
     }
 
     return response()->json([
+        'ok' => true,
         'data' => [
             'items' => $blocks,
             'tip' => $blockCount,
         ],
-        'ok' => true,
     ]);
 });
 
-Route::get('blocks/{hash}', function (BitcoinRPC $rpc, Request $request, $hash) {
-    return 'em breve';
+Route::get('block/{hash}', function (BitcoinRPC $rpc, Request $request, $hash) {
+    $block = $rpc->call('getblock', [$hash, 1]);
+
+    $data = [
+        'hash' => $block['hash'],
+        'height' => $block['height'],
+        'confirmations' => $block['confirmations'],
+        'time' => $block['time'],
+        'nTx' => $block['nTx'],
+        'size' => $block['size'],
+        'weight' => $block['weight'],
+        'version' => $block['version'],
+        'previousblockhash' => $block['previousblockhash'],
+        'nextblockhash' => $block['nextblockhash'] ?? null,
+        'tx' => $block['tx']
+    ];
+
+    return response()->json([
+        'ok' => true,
+        'data' => $data,
+    ]);
 });

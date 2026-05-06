@@ -175,6 +175,7 @@ a.hash { color: var(--accent); text-decoration: none }
 a.hash:hover { text-decoration: underline }
 
 .pre {
+    font-size: 11px;
     margin-top: 10px; padding: 12px; border-radius: 14px;
     border: 1px solid rgba(255, 255, 255, .08); background: rgba(0, 0, 0, .25);
     overflow: auto; max-height: 280px;
