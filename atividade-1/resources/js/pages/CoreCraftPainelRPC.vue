@@ -7,6 +7,19 @@ import RecentBlocksSection from '@/components/painel/RecentBlocksSection.vue'
 import BlockConsultCard from '@/components/painel/BlockConsultCard.vue'
 import TxConsultCard from '@/components/painel/TxConsultCard.vue'
 
+interface MempoolIntelData {
+    tx_count: number;
+    total_vsize: number;
+    avg_fee_rate: number | null;
+    min_fee_rate: number | null;
+    max_fee_rate: number | null;
+    fee_distribution: {
+        low: number;
+        medium: number;
+        high: number;
+    };
+}
+
 interface NodeApiData {
     chain: string;
     blocks: number;
@@ -24,6 +37,7 @@ interface NodeApiData {
 
 const nodeKV = ref<Record<string, string | number>>({});
 const mempoolKV = ref<Record<string, string | number>>({});
+const mempoolIntelKV = ref<Record<string, string | number>>({});
 const nodeError = ref('');
 const isLoadingNode = ref(false);
 const blockHash = ref('');
@@ -32,7 +46,10 @@ async function refreshNode() {
     isLoadingNode.value = true;
     nodeError.value = '';
     try {
-        const data = await apiGet<NodeApiData>('/api/node');
+        const [data, mempoolIntel] = await Promise.all([
+            apiGet<NodeApiData>('/api/node'),
+            apiGet<MempoolIntelData>('/api/mempool/summary')
+        ]);
         nodeKV.value = {
             chain: data.chain,
             blocks: data.blocks,
@@ -46,6 +63,11 @@ async function refreshNode() {
             bytes: data.mempool.bytes,
             maxmempool: data.mempool.maxmempool,
             mempoolminfee: data.mempool.mempoolminfee,
+        };
+        mempoolIntelKV.value = {
+            'Total de transações': mempoolIntel.tx_count,
+            'Fee média': mempoolIntel.avg_fee_rate !== null ? Number(mempoolIntel.avg_fee_rate).toFixed(2) + ' sats/vB' : '-',
+            'Distribuição (Low / Medium / High)': `${mempoolIntel.fee_distribution.low} / ${mempoolIntel.fee_distribution.medium} / ${mempoolIntel.fee_distribution.high}`,
         };
     } catch (e) {
         nodeError.value = (e as Error).message;
@@ -73,7 +95,7 @@ onMounted(() => refreshNode());
             </div>
         </header>
 
-        <section class="grid">
+        <section class="grid grid-2">
             <div class="card">
                 <h2>Estado do node</h2>
                 <KVDisplay :data="nodeKV" />
@@ -82,6 +104,10 @@ onMounted(() => refreshNode());
             <div class="card">
                 <h2>Mempool</h2>
                 <KVDisplay :data="mempoolKV" />
+            </div>
+            <div class="card">
+                <h2>Mempool Intelligence</h2>
+                <KVDisplay :data="mempoolIntelKV" />
             </div>
         </section>
 
@@ -133,6 +159,7 @@ body {
 .actions { display: flex; gap: 10px; align-items: center }
 
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 14px 0 }
+.grid-3 { grid-template-columns: 1fr 1fr 1fr; }
 
 .card {
     background: linear-gradient(180deg, rgba(255, 255, 255, .03), rgba(255, 255, 255, .01));
@@ -190,7 +217,7 @@ a.hash:hover { text-decoration: underline }
 .footer { margin-top: 18px; text-align: center }
 
 @media (max-width: 900px) {
-    .grid { grid-template-columns: 1fr }
+    .grid, .grid-3 { grid-template-columns: 1fr }
     .header { align-items: flex-start; flex-direction: column }
 }
 </style>
