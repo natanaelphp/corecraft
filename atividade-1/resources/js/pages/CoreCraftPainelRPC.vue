@@ -20,6 +20,12 @@ interface MempoolIntelData {
     };
 }
 
+interface SyncStatusData {
+    blocks: number;
+    headers: number;
+    lag: number;
+}
+
 interface NodeApiData {
     chain: string;
     blocks: number;
@@ -38,6 +44,7 @@ interface NodeApiData {
 const nodeKV = ref<Record<string, string | number>>({});
 const mempoolKV = ref<Record<string, string | number>>({});
 const mempoolIntelKV = ref<Record<string, string | number>>({});
+const syncStatusKV = ref<Record<string, string | number>>({});
 const nodeError = ref('');
 const isLoadingNode = ref(false);
 const blockHash = ref('');
@@ -46,9 +53,10 @@ async function refreshNode() {
     isLoadingNode.value = true;
     nodeError.value = '';
     try {
-        const [data, mempoolIntel] = await Promise.all([
+        const [data, mempoolIntel, syncStatus] = await Promise.all([
             apiGet<NodeApiData>('/api/node'),
-            apiGet<MempoolIntelData>('/api/mempool/summary')
+            apiGet<MempoolIntelData>('/api/mempool/summary'),
+            apiGet<SyncStatusData>('/api/blockchain/lag')
         ]);
         nodeKV.value = {
             chain: data.chain,
@@ -68,6 +76,11 @@ async function refreshNode() {
             'Total de transações': mempoolIntel.tx_count,
             'Fee média': mempoolIntel.avg_fee_rate !== null ? Number(mempoolIntel.avg_fee_rate).toFixed(2) + ' sats/vB' : '-',
             'Distribuição (Low / Medium / High)': `${mempoolIntel.fee_distribution.low} / ${mempoolIntel.fee_distribution.medium} / ${mempoolIntel.fee_distribution.high}`,
+        };
+        syncStatusKV.value = {
+            'Blocks': syncStatus.blocks,
+            'Headers': syncStatus.headers,
+            'Lag': syncStatus.lag,
         };
     } catch (e) {
         nodeError.value = (e as Error).message;
@@ -108,6 +121,10 @@ onMounted(() => refreshNode());
             <div class="card">
                 <h2>Mempool Intelligence</h2>
                 <KVDisplay :data="mempoolIntelKV" />
+            </div>
+            <div class="card">
+                <h2>Node Sync Status</h2>
+                <KVDisplay :data="syncStatusKV" />
             </div>
         </section>
 
@@ -159,7 +176,6 @@ body {
 .actions { display: flex; gap: 10px; align-items: center }
 
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 14px 0 }
-.grid-3 { grid-template-columns: 1fr 1fr 1fr; }
 
 .card {
     background: linear-gradient(180deg, rgba(255, 255, 255, .03), rgba(255, 255, 255, .01));
@@ -217,7 +233,7 @@ a.hash:hover { text-decoration: underline }
 .footer { margin-top: 18px; text-align: center }
 
 @media (max-width: 900px) {
-    .grid, .grid-3 { grid-template-columns: 1fr }
+    .grid { grid-template-columns: 1fr }
     .header { align-items: flex-start; flex-direction: column }
 }
 </style>
