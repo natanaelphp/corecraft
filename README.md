@@ -1,6 +1,6 @@
 # Corecraft
 
-Atividades do curso CoreCraft
+Atividades do programa CoreCraft
 
 ## Estrutura
 
