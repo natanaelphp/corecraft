@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\NodeController;
 use App\Http\Controllers\Api\BlockController;
 use App\Http\Controllers\Api\MempoolController;
+use App\Http\Controllers\Api\BlockchainController;
 use App\Http\Controllers\Api\TransactionController;
 
 Route::get('node', NodeController::class);
@@ -14,3 +15,5 @@ Route::get('block/{hash}', [BlockController::class, 'show']);
 Route::get('tx/{txid}', TransactionController::class);
 
 Route::get('mempool/summary', MempoolController::class);
+
+Route::get('blockchain/lag', BlockchainController::class);
